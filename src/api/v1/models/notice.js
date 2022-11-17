@@ -13,11 +13,14 @@ const noticeSchema = new mongoose.Schema({
     description: {
         type: String,
     },
+    imageFilename: {
+        type: String
+    },
     owner: {
         type: String
     },
     publisher: {
-        type: String
+        type: String // store user id
     },
     phone: {
         type: Number,

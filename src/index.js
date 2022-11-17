@@ -1,6 +1,7 @@
 require('dotenv').config()
+require('module-alias/register')
 const { app } = require("./app");
-const connectDB = require("./db/connection")
+const connectDB = require("@db/connection")
 let server;
 let API_PORT = process.env.PORT_NO;
 const init = async () => {
