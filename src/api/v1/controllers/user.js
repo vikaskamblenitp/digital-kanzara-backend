@@ -57,13 +57,13 @@ const signup = async (req, res) => {
 		});
 	}
 };
-
+// rename to fetch user
 const tokenValidity = async (req, res) => {
 	try {
 		const { token } = req.body;
 		const decoded = jwt.verify(token, process.env.JWT_SECRET);
-		console.log(decoded);
-		res.status(200).json({ username: decoded.username });
+		const user = await User.findOne({username: decoded.username})
+		res.status(200).json(user);
 	} catch (error) {
 		res.status(401).json({
 			msg: error.message,
@@ -73,9 +73,6 @@ const tokenValidity = async (req, res) => {
 
 const updateProfile = async (req, res) => {
 	try {
-		console.log("body==>",req.body)
-		console.log("file==>",req.file);
-		console.log("user==>",req.user);
 		const { username } = req.user;
 		console.log(req.file)
 		const filename = req.file.filename;
@@ -83,6 +80,7 @@ const updateProfile = async (req, res) => {
 			{ username: username },
 			{ profileImage: filename }
 		);
+		if(!response.profileImage)
 		fs.unlink(`.data/profile/${response.profileImage}`,(err)=>{console.log(err)})
 		response.profileImage = filename;
 		res.status(201).json({response});

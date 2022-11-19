@@ -20,6 +20,7 @@ const storage = multer.diskStorage({
 		}
 	},
 	filename(req, file, callback) {
+		console.log("file:", file)
 		const ext = file.mimetype.split("/")[1];
 		callback(null, `${file.fieldname}-${uuidv4()}.${ext}`);
 	},

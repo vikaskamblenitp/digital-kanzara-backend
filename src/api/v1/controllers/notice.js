@@ -34,8 +34,9 @@ const getNotice = async (req, res) => {
 const addNotice = async (req, res) => {
 	try {
 		const { username } = req.user;
+		console.log("==", req.file)
 		const user = await User.findOne({username: username});
-		const filename = req.file.filename ? req.file.filename : null;
+		const filename = req.file ? req.file.filename : null
 		const data = {
 			...req.body,
 			imageFilename: filename,
@@ -43,15 +44,20 @@ const addNotice = async (req, res) => {
 			postedOn: new Date(),
 		};
 		const notice = await Notice.create(data);
+		console.log("notice", notice)
 		res.status(201).json({ notice });
 	} catch (error) {
 		console.log(`ERROR: ${error}`);
+		res.status(500).json({msg: "some error", err: error})
 	}
 };
 
 const editNotice = async (req, res) => {
 	try {
-		const { id: noticeID } = req.params;
+		console.log(req.params)
+		const { id : noticeID }= req.params;
+		// const noticeID = mongoose.Types.ObjectId(id);
+		console.log("id:",noticeID)
 		const notice = await Notice.findOneAndUpdate({ _id: noticeID }, req.body, {
 			new: true,
 			runValidators: true,
@@ -62,7 +68,7 @@ const editNotice = async (req, res) => {
 		console.log(error);
 	}
 };
-
+// Add logic for deleting the notice image stored in static files folder
 const deleteNotice = async (req, res) => {
 	try {
 		const { id: noticeID } = req.params;
