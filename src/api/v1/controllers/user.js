@@ -25,6 +25,7 @@ const login = async (req, res) => {
 			msg: "Login successfully",
 			token: token,
 			username: user.username,
+			userID: user._id,
 			profileImage: user.profileImage
 		});
 	} catch (error) {

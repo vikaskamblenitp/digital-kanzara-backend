@@ -4,7 +4,10 @@ const User = require("../models/user");
 
 const getAllNotices = async (req, res) => {
 	try {
-		const notices = await Notice.find({});
+		const {page} = req.query
+		console.log(parseInt(page))
+		const pageSize = 4
+		const notices = await Notice.find({}).sort({_id: -1}).limit(pageSize).skip(pageSize*parseInt(page));
 		const noticeArray = [];
 		for (var notice of notices) {
 			const userId = mongoose.Types.ObjectId(notice.publisher);
@@ -22,6 +25,15 @@ const getAllNotices = async (req, res) => {
 		console.log(error);
 	}
 };
+const getUserNotices = async (req, res) => {
+	try{
+	const {userID} = req.query
+	const notices = await Notice.find({publisher: userID})
+	res.status(200).json(notices)
+	} catch(error) {
+		res.status(500).json({message: error.message})
+	}
+}
 const getNotice = async (req, res) => {
 	try {
 		const { id: noticeID } = req.params;
@@ -41,7 +53,7 @@ const addNotice = async (req, res) => {
 			...req.body,
 			imageFilename: filename,
 			publisher: user._id,
-			postedOn: new Date(),
+			postedOn: new Date().toString().split('.')[0],
 		};
 		const notice = await Notice.create(data);
 		console.log("notice", notice)
@@ -81,6 +93,7 @@ const deleteNotice = async (req, res) => {
 
 module.exports = {
 	getAllNotices,
+	getUserNotices,
 	getNotice,
 	addNotice,
 	editNotice,

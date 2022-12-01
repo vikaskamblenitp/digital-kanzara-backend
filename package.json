@@ -23,13 +23,13 @@
 		"@root": ".",
 		"@src": "./src",
 		"@middlewares": "./src/middlewares",
-    "@db": "./src/db",
-    "@configs": "./src/configs",
-    "@routes": "./src/api/v1/routes",
-    "@models": "./src/api/v1/models",
-    "@controllers": "./src/api/v1/controllers",
-    "@profile": "./.data/profile",
-    "@files": "./.data/files"
+		"@db": "./src/db",
+		"@configs": "./src/configs",
+		"@routes": "./src/api/v1/routes",
+		"@models": "./src/api/v1/models",
+		"@controllers": "./src/api/v1/controllers",
+		"@profile": "./.data/profile",
+		"@files": "./.data/files"
 	},
 	"keywords": [
 		"NodeJS"
