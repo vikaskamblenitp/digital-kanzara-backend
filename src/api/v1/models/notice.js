@@ -16,18 +16,17 @@ const noticeSchema = new mongoose.Schema({
     imageFilename: {
         type: String
     },
-    owner: {
-        type: String
-    },
     publisher: {
         type: String // store user id
     },
-    phone: {
-        type: Number,
-        max: [9999999999]
+    username: {
+        type: String
+    },
+    profileImage: {
+        type: String
     },
     postedOn: {
-        type: Date,
+        type: Number,
     }
 })
 

@@ -3,27 +3,27 @@ const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
 
 const storage = multer.diskStorage({
-	destination(req, file, callback) {
-		switch (file.fieldname) {
-			case "file": {
-				callback(null, join(".data", "files"));
-				break;
-			}
-			case "profile": {
-				callback(null, join(".data", "profile"));
-				break;
-			}
-			default: {
-				callback(null, join(".data", "files"));
-				break;
-			}
-		}
-	},
-	filename(req, file, callback) {
-		console.log("file:", file)
-		const ext = file.mimetype.split("/")[1];
-		callback(null, `${file.fieldname}-${uuidv4()}.${ext}`);
-	},
+	// destination(req, file, callback) {
+	// 	switch (file.fieldname) {
+	// 		case "file": {
+	// 			callback(null, true);
+	// 			break;
+	// 		}
+	// 		case "profile": {
+	// 			callback(null, join(".data", "profile"));
+	// 			break;
+	// 		}
+	// 		default: {
+	// 			callback(null, join(".data", "files"));
+	// 			break;
+	// 		}
+	// 	}
+	// },
+	// filename(req, file, callback) {
+	// 	console.log("file:", file)
+	// 	const ext = file.mimetype.split("/")[1];
+	// 	callback(null, `${file.fieldname}-${uuidv4()}.${ext}`);
+	// },
 });
 
 const memoryStorage = multer.memoryStorage();

@@ -1,10 +1,13 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
+// const fs = require("fs");
+const { cloudinary } = require("@configs/cloudinary.js");
 const User = require("../models/user");
+const count = require("./Counter");
 
 const login = async (req, res) => {
 	try {
+		await count("login")
 		console.log(req.headers);
 		const { username, password } = req.body;
 		console.log(username);
@@ -18,15 +21,13 @@ const login = async (req, res) => {
 			throw new Error("Username or password is wrong");
 		}
 		const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
-			expiresIn: "30d",
+			expiresIn: "365d",
 		});
-		console.log(token);
 		res.status(200).json({
-			msg: "Login successfully",
 			token: token,
 			username: user.username,
 			userID: user._id,
-			profileImage: user.profileImage
+			profileImage: user.profileImage,
 		});
 	} catch (error) {
 		res.status(401).json({
@@ -37,16 +38,17 @@ const login = async (req, res) => {
 
 const signup = async (req, res) => {
 	try {
-		const { username, password } = req.body;
+		await count("signup")
+		const { name, phone, username, password } = req.body;
 		const user = await User.findOne({ username: username });
 		if (user) {
 			throw new Error("user already exists");
 		}
 		const hash = bcrypt.hashSync(password, Number(process.env.SALT_ROUNDS));
 		console.log("hash:", hash);
-		const newUser = await User.create({ username: username, password: hash });
-		const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
-			expiresIn: "30d",
+		const newUser = await User.create({name, phone, username, password: hash });
+		const token = jwt.sign({ username }, process.env.JWT_SECRET, {
+			expiresIn: "365d",
 		});
 		res.status(200).json({
 			user: newUser,
@@ -61,10 +63,10 @@ const signup = async (req, res) => {
 // rename to fetch user
 const tokenValidity = async (req, res) => {
 	try {
+		await count("tokenValidity")
 		const { token } = req.body;
 		const decoded = jwt.verify(token, process.env.JWT_SECRET);
-		const user = await User.findOne({username: decoded.username})
-		res.status(200).json(user);
+		res.status(200).json({ username: decoded.username });
 	} catch (error) {
 		res.status(401).json({
 			msg: error.message,
@@ -74,19 +76,26 @@ const tokenValidity = async (req, res) => {
 
 const updateProfile = async (req, res) => {
 	try {
+		await count("updateProfile")
 		const { username } = req.user;
-		console.log(req.file)
-		const filename = req.file.filename;
-		const response = await User.findOneAndUpdate(
+		const response = await cloudinary.uploader.upload(req.file.path, {
+			folder: "DigitalKanzara/profile/",
+			public_id: username,
+			version: Date.now(),
+			transformation: { width: 300, height: 300, crop: "scale" },
+		});
+		console.log("response:", response);
+		const filename = response.url;
+		const newUser = await User.findOneAndUpdate(
 			{ username: username },
 			{ profileImage: filename }
 		);
-		if(!response.profileImage)
-		fs.unlink(`.data/profile/${response.profileImage}`,(err)=>{console.log(err)})
-		response.profileImage = filename;
-		res.status(201).json({response});
+		// if(!response.profileImage)
+		// fs.unlink(`.data/profile/${response.profileImage}`,(err)=>{console.log(err)})
+
+		res.status(201).json({ profileImage: filename });
 	} catch (error) {
-		console.log("err:", error)
+		console.log("err:", error);
 		res.status(500).json({ msg: error.message });
 	}
 };
