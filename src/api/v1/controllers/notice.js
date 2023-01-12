@@ -5,24 +5,71 @@ const count = require("./Counter");
 const getAllNotices = async (req, res) => {
 	try {
 		await count("getAllNotices");
-		const { page } = req.query;
-		console.log(parseInt(page));
-		const pageSize = 10;
-		const notices = await Notice.find({})
-			.sort({ _id: -1 })
-			.limit(pageSize)
-			.skip(pageSize * parseInt(page));
+		const { page, lastReadTime, endReadTime, sector } = req.query;
+		let allVisitedFlag, deletePastFlag;
+		console.log({page, lastReadTime, endReadTime, sector})
+		const PAGE_SIZE = 15;
 
-		res.status(200).json({ notices });
+		const query = Notice.find();
+		if(sector) {
+			query.where("sector").equals(sector);
+		}
+		if(lastReadTime) {
+			query.where("postedOn").gt(lastReadTime);
+		}
+		if(endReadTime) {
+			query.where("postedOn").gt(endReadTime);
+		}
+
+		const notices = await query.limit(PAGE_SIZE).sort("-_id");
+		if(endReadTime) allVisitedFlag = notices.length < PAGE_SIZE ? true : false;
+		if(lastReadTime) deletePastFlag = notices.length < 15 ? false : true;
+		res.status(200).json({notices, allVisitedFlag, deletePastFlag});
+
+		
+		// if(sector) {
+		// 	const notices = await Notice.find({ sector }).sort(-1);
+		// 	// const allVisitedFlag = notices.length < pageSize ? true : false;
+		// 	console.log(notices);
+		// 	return res.status(200).json({ notices, allVisitedFlag: true })
+		// }
+		
+		// if(lastReadTime){
+		// 	const currentTime = Date.now()
+		// 	const notices = await Notice.find({'postedOn' : { $gt : lastReadTime, $lte: currentTime }}).sort({_id: -1}).limit(15);
+		// 	const deletePastFlag = notices.length < 15 ? false : true;
+		// 	return res.status(200).json({ notices, deletePastFlag })
+		// } else if( endReadTime ) {
+		// 	const notices = await Notice.find({'postedOn' : { $lt : endReadTime }}).sort({_id: -1}).limit(pageSize);
+		// 	const allVisitedFlag = notices.length < pageSize ? true : false;
+		// 	return res.status(200).json({ notices, allVisitedFlag })
+		// } {
+		// 	const notices = await Notice.find({})
+		// 	.sort({ _id: -1 })
+		// 	.limit(pageSize)
+		// 	.skip(pageSize * parseInt(page));
+		// 	return res.status(200).json({ notices, deletePastFlag: false });
+		// }
+
 	} catch (error) {
-		console.log(error);
+		res.status(500).json({ message: error.message });
 	}
 };
+
+const getCountOfPosts = async (req, res) => {
+	try {
+		const {currentTime, lastReadTime} = req.query;
+		const notices = await Notice.find({ 'postedOn' : {$gt : lastReadTime, $lte: currentTime}}).count();
+		res.status(200).json({notices})
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+}
 const getUserNotices = async (req, res) => {
 	try {
 		await count("getUserNotices");
-		const { userID } = req.query;
-		const notices = await Notice.find({ publisher: userID }).sort({ _id: -1 });
+		const { username } = req.query;
+		const notices = await Notice.find({ username }).sort({ _id: -1 });
 		res.status(200).json(notices);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
@@ -41,8 +88,7 @@ const getNotice = async (req, res) => {
 const addNotice = async (req, res) => {
 	try {
 		await count("addNotice");
-		const { username } = req.user;
-		console.log("==", req.file);
+		const { username } = req.data;
 		const user = await User.findOne({ username: username });
 		if (user.postLimit > 0) {
 			let fileURL;
@@ -52,14 +98,12 @@ const addNotice = async (req, res) => {
 					transformation: { width: 1080, height: 720, crop: "scale" },
 				});
 				fileURL = imageData.url;
-				console.log("cloudinary_response:", imageData);
 			} else {
 				fileURL = null;
 			}
 			const data = {
 				...req.body,
 				imageFilename: fileURL,
-				publisher: user._id,
 				username: user.username,
 				profileImage: user.profileImage,
 				postedOn: Date.now(),
@@ -106,6 +150,7 @@ const deleteNotice = async (req, res) => {
 
 module.exports = {
 	getAllNotices,
+	getCountOfPosts,
 	getUserNotices,
 	getNotice,
 	addNotice,

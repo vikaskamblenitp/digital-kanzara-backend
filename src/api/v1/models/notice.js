@@ -16,9 +16,6 @@ const noticeSchema = new mongoose.Schema({
     imageFilename: {
         type: String
     },
-    publisher: {
-        type: String // store user id
-    },
     username: {
         type: String
     },

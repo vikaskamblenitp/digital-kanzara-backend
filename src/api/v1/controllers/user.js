@@ -1,6 +1,5 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-// const fs = require("fs");
 const { cloudinary } = require("@configs/cloudinary.js");
 const User = require("../models/user");
 const count = require("./Counter");
@@ -8,11 +7,8 @@ const count = require("./Counter");
 const login = async (req, res) => {
 	try {
 		await count("login")
-		console.log(req.headers);
 		const { username, password } = req.body;
-		console.log(username);
 		const user = await User.findOne({ username: username });
-		console.log(user);
 		if (!user) {
 			throw new Error("user not exist");
 		}
@@ -20,13 +16,12 @@ const login = async (req, res) => {
 		if (!match) {
 			throw new Error("Username or password is wrong");
 		}
-		const token = jwt.sign({ username: username }, process.env.JWT_SECRET, {
+		const token = jwt.sign({ username: username, role: user.role }, process.env.JWT_SECRET, {
 			expiresIn: "365d",
 		});
 		res.status(200).json({
 			token: token,
 			username: user.username,
-			userID: user._id,
 			profileImage: user.profileImage,
 		});
 	} catch (error) {
@@ -45,14 +40,15 @@ const signup = async (req, res) => {
 			throw new Error("user already exists");
 		}
 		const hash = bcrypt.hashSync(password, Number(process.env.SALT_ROUNDS));
-		console.log("hash:", hash);
+		
 		const newUser = await User.create({name, phone, username, password: hash });
 		const token = jwt.sign({ username }, process.env.JWT_SECRET, {
 			expiresIn: "365d",
 		});
 		res.status(200).json({
-			user: newUser,
 			token: token,
+			username: newUser.username,
+			profileImage: newUser.profileImage,
 		});
 	} catch (error) {
 		res.status(401).json({
@@ -77,32 +73,41 @@ const tokenValidity = async (req, res) => {
 const updateProfile = async (req, res) => {
 	try {
 		await count("updateProfile")
-		const { username } = req.user;
+		const { username } = req.data;
 		const response = await cloudinary.uploader.upload(req.file.path, {
 			folder: "DigitalKanzara/profile/",
 			public_id: username,
 			version: Date.now(),
 			transformation: { width: 300, height: 300, crop: "scale" },
 		});
-		console.log("response:", response);
-		const filename = response.url;
+		const url = response.url;
+		res.status(201).json({ profileImage: url });
 		const newUser = await User.findOneAndUpdate(
 			{ username: username },
-			{ profileImage: filename }
+			{ profileImage: url }
 		);
-		// if(!response.profileImage)
-		// fs.unlink(`.data/profile/${response.profileImage}`,(err)=>{console.log(err)})
-
-		res.status(201).json({ profileImage: filename });
 	} catch (error) {
 		console.log("err:", error);
 		res.status(500).json({ msg: error.message });
 	}
 };
 
+const getProfileURL = async (req, res) => {
+	try {
+		const { username } = req.query;
+		const profileImage = await User.findOne({ username }, {profileImage:1, _id:0});
+		res.status(200).json(profileImage);
+	} catch (error) {
+		console.error(error);
+
+		res.status(500).json({ msg: error.message });
+	}
+}
+
 module.exports = {
 	login,
 	signup,
 	tokenValidity,
 	updateProfile,
+	getProfileURL
 };

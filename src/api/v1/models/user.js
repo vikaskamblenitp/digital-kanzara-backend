@@ -10,11 +10,11 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: "consumer"
+        default: "USER"
     },
     postLimit: {
         type: Number,
-        default: 0
+        default: 30
     },
     username: {
         type: String,
@@ -27,7 +27,9 @@ const userSchema = new mongoose.Schema({
     },
     profileImage: {
         type: String,
-    }
+    },
+    likes: [{postId: String, time: Number}],
+    dislikes: [{postId: String, time: Number}]
 })
 
 module.exports = mongoose.model('User', userSchema);
