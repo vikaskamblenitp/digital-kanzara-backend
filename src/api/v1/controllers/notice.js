@@ -2,15 +2,21 @@ const Notice = require("../models/notice");
 const User = require("../models/user");
 const { cloudinary } = require("@configs/cloudinary.js");
 const count = require("./Counter");
+const { _getProfileURL } = require("./user/user");
 const getAllNotices = async (req, res) => {
 	try {
 		await count("getAllNotices");
-		const { page, lastReadTime, endReadTime, sector } = req.query;
+		console.log("getAllNotices");
+
+		const { page, lastReadTime, endReadTime, sector, username } = req.query;
+		console.log({ lastReadTime, endReadTime, sector, username })
 		let allVisitedFlag, deletePastFlag;
-		console.log({page, lastReadTime, endReadTime, sector})
 		const PAGE_SIZE = 15;
 
 		const query = Notice.find();
+		if(username) {
+			query.where("username").equals(username);
+    }
 		if(sector) {
 			query.where("sector").equals(sector);
 		}
@@ -18,12 +24,18 @@ const getAllNotices = async (req, res) => {
 			query.where("postedOn").gt(lastReadTime);
 		}
 		if(endReadTime) {
-			query.where("postedOn").gt(endReadTime);
+			query.where("postedOn").lt(endReadTime);
 		}
 
 		const notices = await query.limit(PAGE_SIZE).sort("-_id");
 		if(endReadTime) allVisitedFlag = notices.length < PAGE_SIZE ? true : false;
 		if(lastReadTime) deletePastFlag = notices.length < 15 ? false : true;
+		for(const notice of notices) {
+			 const {profileImage}= await _getProfileURL(notice.username);
+			 notice.profileImage = profileImage
+		}
+		console.log({ notices, allVisitedFlag, deletePastFlag });
+		
 		res.status(200).json({notices, allVisitedFlag, deletePastFlag});
 
 		
@@ -88,9 +100,12 @@ const getNotice = async (req, res) => {
 const addNotice = async (req, res) => {
 	try {
 		await count("addNotice");
-		const { username } = req.data;
-		const user = await User.findOne({ username: username });
-		if (user.postLimit > 0) {
+		const { username, role } = req.data;
+		if(role == "USER"){
+			return res.status(401).json({ message: "PLEASE SUBSCRIBE FOR ADDING YOUR POSTS" });
+		}
+		const {postLimit, profileImage} = await User.findOne({ username }, {postLimit:1, profileImage:1, _id:0});
+		if (postLimit > 0) {
 			let fileURL;
 			if (req.file) {
 				const imageData = await cloudinary.uploader.upload(req.file.path, {
@@ -104,17 +119,17 @@ const addNotice = async (req, res) => {
 			const data = {
 				...req.body,
 				imageFilename: fileURL,
-				username: user.username,
-				profileImage: user.profileImage,
+				username: username,
+				profileImage: profileImage,
 				postedOn: Date.now(),
 			};
-			const notice = await Notice.create(data);
-			res.status(201).json({ msg: "Post Added Successfully" });
+			await Notice.create(data);
+			res.status(201).json({ message: "Post Added Successfully" });
 		} else {
 			res.status(500).json({message: "Your posting limit is exhausted"})
 		}
 	} catch (error) {
-		console.log(`ERROR: ${error}`);
+		console.error(error);
 		res.status(500).json({ msg: "some error", err: error });
 	}
 };
@@ -133,7 +148,7 @@ const editNotice = async (req, res) => {
 		console.log(notice);
 		res.status(204).json({ notice });
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 	}
 };
 // Add logic for deleting the notice image stored in static files folder

@@ -28,6 +28,17 @@ const addLike = async (req, res) => {
     }
 }
 
+const getLikes = async (req, res) => {
+    try {
+        const {postId} = req.query;
+        const response = await Like.find({postId}, {likes:1,_id:0});
+        const likes = response[0] ? response[0].likes : []
+        res.status(200).json({likes})
+    } catch (error) {
+        res.status(500).json({message: error})
+    }
+}
+
 const addDislike = async (req, res) => {
     try {
         const {_id, username } = req.body;
@@ -42,7 +53,7 @@ const addDislike = async (req, res) => {
             $push : {dislikes: {username, time: Date.now()}},
             $inc: {count: 1}
            }, { upsert : true })
-
+        const time = Date.now();
         await User.findOneAndUpdate({username},{
             $push: {dislikes: {postId: _id, time }}
         })
@@ -56,5 +67,6 @@ const addDislike = async (req, res) => {
 
 module.exports ={
     addLike,
+    getLikes,
     addDislike
 }
