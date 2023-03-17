@@ -3,13 +3,13 @@ const User = require("../models/user");
 const { cloudinary } = require("@configs/cloudinary.js");
 const count = require("./Counter");
 const { _getProfileURL } = require("./user/user");
+const { sendPushNotificationAsync } = require("../../../helpers/notification");
 const getAllNotices = async (req, res) => {
 	try {
 		await count("getAllNotices");
-		console.log("getAllNotices");
 
 		const { page, lastReadTime, endReadTime, sector, username } = req.query;
-		console.log({ lastReadTime, endReadTime, sector, username })
+		// console.log({ lastReadTime, endReadTime, sector, username })
 		let allVisitedFlag, deletePastFlag;
 		const PAGE_SIZE = 15;
 
@@ -29,12 +29,12 @@ const getAllNotices = async (req, res) => {
 
 		const notices = await query.limit(PAGE_SIZE).sort("-_id");
 		if(endReadTime) allVisitedFlag = notices.length < PAGE_SIZE ? true : false;
-		if(lastReadTime) deletePastFlag = notices.length < 15 ? false : true;
+		if(lastReadTime) deletePastFlag = notices.length < PAGE_SIZE ? false : true;
 		for(const notice of notices) {
 			 const {profileImage}= await _getProfileURL(notice.username);
 			 notice.profileImage = profileImage
 		}
-		console.log({ notices, allVisitedFlag, deletePastFlag });
+		// console.log({ notices, allVisitedFlag, deletePastFlag });
 		
 		res.status(200).json({notices, allVisitedFlag, deletePastFlag});
 
@@ -100,6 +100,11 @@ const getNotice = async (req, res) => {
 const addNotice = async (req, res) => {
 	try {
 		await count("addNotice");
+		// console.log(req.file);
+		if(req.file && req.file.size > 10000000) {
+			// console.log("File size should be less than 10MB");
+			return res.status(500).json({ message: "File size should be less than 10MB" });
+		}
 		const { username, role } = req.data;
 		if(role == "USER"){
 			return res.status(401).json({ message: "PLEASE SUBSCRIBE FOR ADDING YOUR POSTS" });
@@ -109,10 +114,10 @@ const addNotice = async (req, res) => {
 			let fileURL;
 			if (req.file) {
 				const imageData = await cloudinary.uploader.upload(req.file.path, {
-					folder: "DigitalKanzara/files/",
-					transformation: { width: 1080, height: 720, crop: "scale" },
+					folder: "DigitalKanzara/files/"
 				});
 				fileURL = imageData.url;
+				// console.log({fileURL});
 			} else {
 				fileURL = null;
 			}
@@ -124,12 +129,15 @@ const addNotice = async (req, res) => {
 				postedOn: Date.now(),
 			};
 			await Notice.create(data);
+			await User.updateOne({ username }, { $inc: { postLimit: -1 } });
+			
+			await sendPushNotificationAsync({title: req.body.title, username, description: req.body.description })
 			res.status(201).json({ message: "Post Added Successfully" });
 		} else {
 			res.status(500).json({message: "Your posting limit is exhausted"})
 		}
 	} catch (error) {
-		console.error(error);
+		// console.error(error);
 		res.status(500).json({ msg: "some error", err: error });
 	}
 };
@@ -137,18 +145,18 @@ const addNotice = async (req, res) => {
 const editNotice = async (req, res) => {
 	try {
 		await count("editNotice");
-		console.log(req.params);
+		// console.log(req.params);
 		const { id: noticeID } = req.params;
 		// const noticeID = mongoose.Types.ObjectId(id);
-		console.log("id:", noticeID);
+		// console.log("id:", noticeID);
 		const notice = await Notice.findOneAndUpdate({ _id: noticeID }, req.body, {
 			new: true,
 			runValidators: true,
 		});
-		console.log(notice);
+		// console.log(notice);
 		res.status(204).json({ notice });
 	} catch (error) {
-		console.error(error);
+		// // console.error(error);
 	}
 };
 // Add logic for deleting the notice image stored in static files folder

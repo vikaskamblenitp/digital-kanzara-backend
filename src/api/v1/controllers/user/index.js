@@ -3,7 +3,8 @@ const jwt = require("jsonwebtoken");
 const { cloudinary } = require("@configs/cloudinary.js");
 const User = require("../../models/user");
 const count = require("../Counter");
-const {_getProfileURL} = require("./user")
+const {_getProfileURL} = require("./user");
+const token = require("../../models/token");
 
 const login = async (req, res) => {
 	try {
@@ -61,19 +62,6 @@ const signup = async (req, res) => {
 		});
 	}
 };
-// rename to fetch user
-const tokenValidity = async (req, res) => {
-	try {
-		await count("tokenValidity")
-		const { token } = req.body;
-		const decoded = jwt.verify(token, process.env.JWT_SECRET);
-		res.status(200).json({ username: decoded.username });
-	} catch (error) {
-		res.status(401).json({
-			msg: error.message,
-		});
-	}
-};
 
 const updateProfile = async (req, res) => {
 	try {
@@ -118,11 +106,21 @@ const increasePostCount = async (req, res) => {
 	}
 }
 
+const storeExpoToken = async (req, res) => {
+	try {
+		console.log(req.body);
+		await token.create({token: req.body.token});
+		res.status(201).json({message: "Success"})
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+}
+
 module.exports = {
 	login,
 	signup,
-	tokenValidity,
 	updateProfile,
 	getProfileURL,
-	increasePostCount
+	increasePostCount,
+	storeExpoToken
 };

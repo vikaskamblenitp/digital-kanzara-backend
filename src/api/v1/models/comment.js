@@ -6,7 +6,7 @@ const commentSchema = new mongoose.Schema({
 		{
 			username: String,
 			comment: String,
-            time: Number
+      time: Number
 		},
 	],
 	count: {type: Number, default: 0}

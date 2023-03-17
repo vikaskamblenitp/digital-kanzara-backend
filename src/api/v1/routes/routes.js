@@ -6,7 +6,7 @@ const {uploadMiddleware} = require("../../../middlewares/upload.middleware")
 const {addComment, getComments} = require("../controllers/comment");
 const {addLike, addDislike, getLikes} = require("../controllers/like");
 
-const { login, signup, tokenValidity, updateProfile, getProfileURL } = require("../controllers/user");
+const { login, signup, updateProfile, getProfileURL, storeExpoToken } = require("../controllers/user");
 const {
 	getAllNotices,
 	getCountOfPosts,
@@ -18,15 +18,13 @@ const {
 } = require("../controllers/notice");
 const reactionCount = require("../controllers/reactionCount");
 
-router.route("/add-comment").post(addComment);
-router.route("/add-like").post(addLike);
-router.route("/add-dislike").post(addDislike);
-router.route("/get-comments").get(getComments);
-router.route("/get-likes").get(getLikes);
+router.route("/post/:postId/comments").get(getComments).post(addComment);
+router.route("/post/:postId/likes").get(getLikes).post(addLike);
+router.route("/post/:postId/dislike").post(addDislike);
 router.route("/get-reaction-count").get(reactionCount)
 router.route("/login").post(login);
 router.route("/signup").post(signup);
-router.route("/tokenValidity").post(tokenValidity);
+router.route("/store-token").post(storeExpoToken);
 router.route("/updateProfile").patch(authMiddleware,uploadMiddleware("profile"),updateProfile);
 router.route("/get-profile-url").get(getProfileURL);
 router.route("/notices").get(getAllNotices); //get all notices
