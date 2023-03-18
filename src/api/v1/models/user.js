@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
     profileImage: {
         type: String,
     },
+    notifications: {
+        type: Boolean,
+        default: false
+    },
+    active: {
+        type: Boolean,
+        default: false
+    },
     likes: [{postId: String, time: Number}],
     dislikes: [{postId: String, time: Number}]
 })

@@ -12,12 +12,12 @@ const reactionCount = async (req, res) => {
 		);
 		const liked = userReactions[0].likes.some((field) => field.postId === _id)
 			? "like"
-			: null;
+			: undefined;
 		const disliked = userReactions[0].dislikes.some(
 			(field) => field.postId === _id
 		)
 			? "dislike"
-			: null;
+			: undefined;
 		const lCount = await Like.find({ postId: _id }, { count: 1, _id: 0 });
 		const dCount = await Dislike.find({ postId: _id }, { count: 1, _id: 0 });
 		const cCount = await Comment.find({ postId: _id }, { count: 1, _id: 0 });

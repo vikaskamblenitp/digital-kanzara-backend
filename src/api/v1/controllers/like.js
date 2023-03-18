@@ -5,20 +5,27 @@ const User = require('../models/user');
 const addLike = async (req, res) => {
     try {
         const {postId} = req.params;
-        const {username } = req.body;
-        const user = await User.find({username}, {likes: 1, _id: 0});
-    
-        if(user[0].likes.some(field => field.postId === postId)) {
-            return res.status(501).json("allready liked")
-        }
+        const {username, value } = req.body;
         const time = Date.now();
-        const response = await Like.findOneAndUpdate({postId},{
-            $push : {likes: {username, time}},
-            $inc: {count: 1}
-        }, { upsert : true })
-        await User.findOneAndUpdate({username},{
-            $push: {likes: {postId, time }}
-        })
+        if(value === true) {
+            await Like.findOneAndUpdate({postId},{
+                $push : {likes: {username, time}},
+                $inc: {count: 1}
+            }, { upsert : true })
+            await User.findOneAndUpdate({username},{
+                $push: {likes: {postId, time }}
+            })
+        } else if(value === false) {
+            await Like.findOneAndUpdate({postId}, {
+                $pull: {
+                    likes: {username: username},
+                },
+                $inc: {count: -1}
+            }, { upsert : true });
+            await User.findOneAndUpdate({username},{
+                $pull: {likes: {postId}}
+            })
+        }
         
         res.status(201).json({response})
     } catch (error) {
@@ -65,22 +72,30 @@ const getLikes = async (req, res) => {
 
 const addDislike = async (req, res) => {
     try {
-        const {_id, username } = req.body;
-        const user = await User.find({username}, {dislikes: 1, _id: 0});
-    
-        if(user[0].dislikes.some(field => field.postId === _id)) {
-            return res.status(501).json("allready disliked")
+        const { postId } = req.params;
+        const { username, value } = req.body;
+        if(value === true) {
+            let time = Date.now();
+            await Dislike.findOneAndUpdate({postId},{
+                $push : {dislikes: {username, time}},
+                $inc: {count: 1}
+            }, { upsert : true });
+            await User.findOneAndUpdate({username},{
+                $push: {dislikes: {postId, time }}
+            })
+        } else if(value === false) {
+            await Dislike.findOneAndUpdate({postId}, {
+                $pull: {
+                    dislikes: {username: username},
+                },
+                $inc: {count: -1}
+            }, { upsert : true });
+            await User.findOneAndUpdate({username},{
+                $pull: {dislikes: {postId}}
+            })
         }
-        const response = await Dislike.findOneAndUpdate({postId: _id},{
-            $push : {dislikes: {username, time: Date.now()}},
-            $inc: {count: 1}
-        }, { upsert : true })
-        const time = Date.now();
-        await User.findOneAndUpdate({username},{
-            $push: {dislikes: {postId: _id, time }}
-        })
 
-        res.status(201).json({response})
+        res.status(201).json({message: "updated successfully"})
     } catch (error) {
         res.status(500).json({message: error})
     }
