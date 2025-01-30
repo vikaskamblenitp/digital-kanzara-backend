@@ -4,9 +4,8 @@
 	"description": "Rest APIs for Digital Kanzara",
 	"main": "/index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "nodemon src/index.js",
-		"prod": "node src/index.js"
+		"dev": "nodemon src/index.js",
+		"start": "node src/index.js"
 	},
 	"dependencies": {
 		"bcrypt": "^5.1.0",
@@ -35,7 +34,7 @@
 		"@files": "./.data/files"
 	},
 	"keywords": [
-		"NodeJS"
+		"Node.js", "MongoDB"
 	],
 	"license": "ISC",
 	"author": "Vikas Kamble"
